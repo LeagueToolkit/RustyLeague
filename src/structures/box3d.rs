@@ -3,19 +3,19 @@ use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 
 #[derive(Copy, Clone)]
-pub struct R3DBox
+pub struct Box3D
 {
     pub min: Vector3,
     pub max: Vector3
 }
 
-impl R3DBox
+impl Box3D
 {
-    pub const ZERO: R3DBox = R3DBox { min: Vector3::ZERO, max: Vector3::ZERO };
+    pub const ZERO: Box3D = Box3D { min: Vector3::ZERO, max: Vector3::ZERO };
 
     pub fn new(min: Vector3, max: Vector3) -> Self
     {
-        R3DBox
+        Box3D
         {
             min,
             max
@@ -24,7 +24,7 @@ impl R3DBox
 
     pub fn read(reader: &mut BinaryReader) -> Self
     {
-        R3DBox
+        Box3D
         {
             min: Vector3::read(reader),
             max: Vector3::read(reader)
@@ -37,7 +37,7 @@ impl R3DBox
         self.max.write(writer);
     }
 
-    pub fn equals(&self, other: R3DBox) -> bool
+    pub fn equals(&self, other: Box3D) -> bool
     {
         self.min.equals(other.min) && self.max.equals(other.max)
     }

@@ -1,7 +1,7 @@
 use std::string::String;
 use crate::io::binary_reader::BinaryReader;
-use crate::structures::r3d_sphere::R3DSphere;
-use crate::structures::r3d_box::R3DBox;
+use crate::structures::sphere::Sphere;
+use crate::structures::box3d::Box3D;
 use crate::structures::vector3::Vector3;
 use crate::structures::vector2::Vector2;
 use crate::io::binary_writer::BinaryWriter;
@@ -17,8 +17,8 @@ pub struct WorldGeometryModel
 {
     texture: String,
     material: String,
-    bounding_sphere: R3DSphere,
-    bounding_box: R3DBox,
+    bounding_sphere: Sphere,
+    bounding_box: Box3D,
     vertices: Vec<WorldGeometryVertex>,
     indices: Vec<u32>
 }
@@ -31,7 +31,7 @@ pub struct WorldGeometryVertex
 
 pub struct WorldGeometryBucketGrid
 {
-    bounds: R3DBox,
+    bounds: Box3D,
     vertices: Vec<Vector3>,
     indices: Vec<u16>,
     buckets: Vec<Vec<WorldGeometryBucket>>
@@ -139,8 +139,8 @@ impl WorldGeometryModel
     {
         let texture = reader.read_padded_string(260);
         let material = reader.read_padded_string(64);
-        let bounding_sphere = R3DSphere::read(reader);
-        let bounding_box = R3DBox::read(reader);
+        let bounding_sphere = Sphere::read(reader);
+        let bounding_box = Box3D::read(reader);
         let vertex_count = reader.read_u32();
         let index_count = reader.read_u32();
 
@@ -235,7 +235,7 @@ impl WorldGeometryBucketGrid
     {
         WorldGeometryBucketGrid
         {
-            bounds: R3DBox::new(Vector3::zero(), Vector3::zero()),
+            bounds: Box3D::new(Vector3::zero(), Vector3::zero()),
             vertices: Vec::new(),
             indices: Vec::new(),
             buckets: Vec::new()
@@ -286,7 +286,7 @@ impl WorldGeometryBucketGrid
             {
                 let min_vector = Vector3::new(min_x, std::f32::NEG_INFINITY, min_z);
                 let max_vector = Vector3::new(max_x, std::f32::INFINITY, max_z);
-                R3DBox::new(min_vector, max_vector)
+                Box3D::new(min_vector, max_vector)
             },
             vertices,
             indices,
@@ -331,9 +331,9 @@ impl WorldGeometryBucketGrid
         }
     }
 
-    pub fn bounds(&self) -> R3DBox
+    pub fn bounds(&self) -> Box3D
     {
-        if self.bounds.equals(R3DBox::ZERO)
+        if self.bounds.equals(Box3D::ZERO)
         {
             let mut min = Vector3::new(self.vertices[0].x, std::f32::NEG_INFINITY, self.vertices[0].z);
             let mut max = Vector3::new(self.vertices[0].x, std::f32::INFINITY, self.vertices[0].z);
@@ -346,7 +346,7 @@ impl WorldGeometryBucketGrid
                 if max.z < vertex.z { max.z = vertex.z };
             }
 
-            return R3DBox::new(min, max);
+            return Box3D::new(min, max);
         }
         else
         {

@@ -3,17 +3,17 @@ use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 
 #[derive(Copy, Clone)]
-pub struct R3DSphere
+pub struct Sphere
 {
     pub center: Vector3,
     pub radius: f32
 }
 
-impl R3DSphere
+impl Sphere
 {
     pub fn read(reader: &mut BinaryReader) -> Self
     {
-        R3DSphere
+        Sphere
         {
             center: Vector3::read(reader),
             radius: reader.read_f32()
