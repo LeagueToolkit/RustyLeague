@@ -1,5 +1,5 @@
 [package]
-name = "RustyLeague"
+name = "rusty_league"
 version = "0.1.0"
 authors = ["Crauzer <filip.quitko@gmail.com>"]
 edition = "2018"
