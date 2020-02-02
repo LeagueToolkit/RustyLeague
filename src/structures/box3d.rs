@@ -2,7 +2,7 @@ use crate::structures::vector3::Vector3;
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Box3D
 {
     pub min: Vector3,
@@ -13,6 +13,14 @@ impl Box3D
 {
     pub const ZERO: Box3D = Box3D { min: Vector3::ZERO, max: Vector3::ZERO };
 
+    pub fn zero() -> Self
+    {
+        Box3D
+        {
+            min: Vector3::zero(),
+            max: Vector3::zero()
+        }
+    }
     pub fn new(min: Vector3, max: Vector3) -> Self
     {
         Box3D
@@ -21,7 +29,6 @@ impl Box3D
             max
         }
     }
-
     pub fn read(reader: &mut BinaryReader) -> Self
     {
         Box3D
@@ -35,10 +42,5 @@ impl Box3D
     {
         self.min.write(writer);
         self.max.write(writer);
-    }
-
-    pub fn equals(&self, other: Box3D) -> bool
-    {
-        self.min.equals(other.min) && self.max.equals(other.max)
     }
 }

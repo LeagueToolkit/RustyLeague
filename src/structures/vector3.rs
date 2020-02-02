@@ -1,7 +1,7 @@
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Vector3
 {
     pub x: f32,
@@ -38,8 +38,11 @@ impl Vector3
         writer.write(self.z);
     }
 
-    pub fn equals(&self, other: Vector3) -> bool
+    pub fn distance(x: Vector3, y: Vector3) -> f32
     {
-        self.x == other.y && self.y == other.y && self.z == other.z
+        return f32::sqrt(
+            f32::powi(x.x - y.x, 2)
+            - f32::powi(x.y - y.y, 2)
+            - f32::powi(x.z - y.z, 2));
     }
 }

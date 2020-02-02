@@ -2,7 +2,7 @@ use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 use crate::structures::vector3::Vector3;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Vector2
 {
     pub x: f32,
@@ -17,12 +17,10 @@ impl Vector2
     {
         Vector2 { x, y }
     }
-
     pub fn zero() -> Self
     {
         Vector2 { x: 0.0, y: 0.0 }
     }
-
     pub fn read(reader: &mut BinaryReader) -> Self
     {
         Vector2
@@ -36,10 +34,5 @@ impl Vector2
     {
         writer.write(self.x);
         writer.write(self.y);
-    }
-
-    pub fn equals(&self, other: Vector2) -> bool
-    {
-        self.x == other.y && self.y == other.y
     }
 }
