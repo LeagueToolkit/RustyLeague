@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::SeekFrom;
 use std::vec;
 use std::path::Path;
-use crate::io::world_geometry::WorldGeometry;
 use std::borrow::Borrow;
 
 pub struct BinaryWriter<T: Write = File>
@@ -128,6 +127,15 @@ impl<T: Write + Seek> BinaryWriter<T>
     {
         self.write_string(to_write);
         self.write_u8(0);
+    }
+
+    pub fn seek(&mut self, position: SeekFrom)
+    {
+        self.writer.seek(position);
+    }
+    pub fn position(&mut self) -> u64
+    {
+        return self.writer.seek(SeekFrom::Current(0)).unwrap();
     }
 }
 

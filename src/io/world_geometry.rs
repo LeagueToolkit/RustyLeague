@@ -7,6 +7,7 @@ use crate::structures::vector2::Vector2;
 use crate::io::binary_writer::BinaryWriter;
 use std::fs::read;
 use crate::structures::render_bucket_grid::{RenderBucketGrid, RenderBucket};
+use std::io::{Cursor, Write, Seek, Read};
 
 pub struct WorldGeometry
 {
@@ -42,17 +43,23 @@ impl WorldGeometry
             bucket_grid: bucket_grid_template
         }
     }
-    pub fn read(file_location: &str) -> Self
+    pub fn read_from_file(file_location: &str) -> Self
     {
-        let mut file= BinaryReader::from_location(file_location);
-
-        let magic: String = file.read_string(4);
+        WorldGeometry::read(&mut BinaryReader::from_location(file_location))
+    }
+    pub fn read_from_buffer(buffer: Cursor<Vec<u8>>) -> Self
+    {
+        WorldGeometry::read(&mut BinaryReader::from_buffer(buffer))
+    }
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    {
+        let magic: String = reader.read_string(4);
         if &magic != "WGEO"
         {
             panic!("Not a WGEO file")
         }
 
-        let version: u32 = file.read_u32();
+        let version: u32 = reader.read_u32();
         if version != 5 && version != 4
         {
             panic!("Unsupported version");
@@ -62,13 +69,13 @@ impl WorldGeometry
         {
             models:
             {
-                let model_count: u32 = file.read_u32();
-                let face_count: u32 = file.read_u32();
+                let model_count: u32 = reader.read_u32();
+                let face_count: u32 = reader.read_u32();
                 let mut models: Vec<WorldGeometryModel> = Vec::with_capacity(model_count as usize);
 
                 for i in 0..model_count
                 {
-                    models.push(WorldGeometryModel::read(&mut file));
+                    models.push(WorldGeometryModel::read(reader));
                 }
 
                 models
@@ -77,7 +84,7 @@ impl WorldGeometry
             {
                 if version == 5
                 {
-                    RenderBucketGrid::read(&mut file)
+                    RenderBucketGrid::read(reader)
                 }
                 else
                 {
@@ -87,10 +94,16 @@ impl WorldGeometry
         }
     }
 
-    pub fn write(&mut self, file_location: &str)
+    pub fn write_to_file(&mut self, file_location: &str)
     {
-        let mut writer = BinaryWriter::from_location(file_location);
-
+        self.write(&mut BinaryWriter::from_location(file_location));
+    }
+    pub fn write_to_buffer(&mut self, buffer: Cursor<Vec<u8>>)
+    {
+        self.write(&mut BinaryWriter::from_buffer(buffer));
+    }
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    {
         writer.write_string("WGEO".to_string());
         writer.write_u32(5); // Version
         writer.write_u32(self.models.len() as u32); // Model Count
@@ -110,10 +123,10 @@ impl WorldGeometry
 
         for model in &mut self.models
         {
-            model.write(&mut writer);
+            model.write(writer);
         }
 
-        self.bucket_grid.write(&mut writer);
+        self.bucket_grid.write(writer);
     }
 
     pub fn add_model(&mut self, model: WorldGeometryModel)
@@ -149,7 +162,7 @@ impl WorldGeometryModel
             indices
         }
     }
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         let texture = reader.read_padded_string(260);
         let material = reader.read_padded_string(64);
@@ -191,7 +204,7 @@ impl WorldGeometryModel
         }
     }
 
-    pub fn write(&mut self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         writer.write_padded_string(self.texture.clone(), 260);
         writer.write_padded_string(self.material.clone(), 64);
@@ -202,7 +215,7 @@ impl WorldGeometryModel
         writer.write(self.vertices.len() as u32);
         writer.write(self.indices.len() as u32);
 
-        for vertex in &self.vertices
+        for vertex in &mut self.vertices
         {
             vertex.write(writer);
         }
@@ -289,7 +302,15 @@ impl WorldGeometryModel
 
 impl WorldGeometryVertex
 {
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn new(position: Vector3, uv: Vector2) -> Self
+    {
+        WorldGeometryVertex
+        {
+            position,
+            uv
+        }
+    }
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         WorldGeometryVertex
         {
@@ -298,7 +319,7 @@ impl WorldGeometryVertex
         }
     }
 
-    pub fn write(&self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         self.position.write(writer);
         self.uv.write(writer);

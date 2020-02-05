@@ -1,5 +1,6 @@
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
+use std::io::{Read, Seek, Write};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Vector3
@@ -21,7 +22,7 @@ impl Vector3
     {
         Vector3 { x: 0.0, y: 0.0, z: 0.0 }
     }
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         Vector3
         {
@@ -31,7 +32,7 @@ impl Vector3
         }
     }
 
-    pub fn write(&self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         writer.write(self.x);
         writer.write(self.y);

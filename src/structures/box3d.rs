@@ -1,6 +1,7 @@
 use crate::structures::vector3::Vector3;
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
+use std::io::{Write, Seek, Read};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Box3D
@@ -29,7 +30,7 @@ impl Box3D
             max
         }
     }
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         Box3D
         {
@@ -38,7 +39,7 @@ impl Box3D
         }
     }
 
-    pub fn write(&self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         self.min.write(writer);
         self.max.write(writer);
