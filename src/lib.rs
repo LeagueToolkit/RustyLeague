@@ -26,5 +26,12 @@ mod tests
     {
         let mut release_manifest = ReleaseManifest::read_from_file("test_files/C944A5BD0686C600.manifest");
         let mut file = File::create(Path::new("out.txt")).unwrap();
+
+        for file_entry in release_manifest.files()
+        {
+            let string = format!("{:#?}", *file_entry);
+            file.write(&string.as_bytes());
+            file.flush();
+        }
     }
 }

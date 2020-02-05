@@ -354,7 +354,6 @@ impl ReleaseManifestFile
         else { Vec::default() };
 
         let unknown1 = reader.read_u32();
-        let permissions = reader.read_u32(); //??
 
         let chunk_count = reader.read_u32();
         let mut chunk_ids: Vec<u64> = Vec::with_capacity(chunk_count as usize);
@@ -362,8 +361,6 @@ impl ReleaseManifestFile
         {
             chunk_ids.push(reader.read_u64());
         }
-
-        let return_offset = reader.position();
 
         reader.seek(SeekFrom::Start(file_offset + name_offset + 4));
         let name = reader.read_sized_string();
@@ -377,7 +374,7 @@ impl ReleaseManifestFile
             link,
             id,
             directory_id,
-            size: size,
+            size,
             language_ids,
             chunk_ids
         }
@@ -396,10 +393,11 @@ impl ReleaseManifestDirectory
 {
     fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
-        let offset_table_offset = reader.read_u32() as u64;
+        let offset_table_offset = reader.read_i32();
         let directory_offset = reader.position();
 
-        reader.seek(SeekFrom::Start(directory_offset - offset_table_offset));
+        println!("{} {}", offset_table_offset, directory_offset);
+        reader.seek(SeekFrom::Start((directory_offset as i64 - offset_table_offset as i64) as u64));
 
         let id_offset = reader.read_u16() as u64;
         let parent_id_offset = reader.read_u16() as u64;
