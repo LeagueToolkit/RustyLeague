@@ -2,7 +2,9 @@ use crate::io::binary_reader::BinaryReader;
 use crate::structures::vector3::Vector3;
 use crate::structures::box3d::Box3D;
 use crate::io::binary_writer::BinaryWriter;
+use std::io::{Read, Seek, Write};
 
+#[derive(Clone)]
 pub struct RenderBucketGrid
 {
     bounds: Box3D,
@@ -34,7 +36,7 @@ impl RenderBucketGrid
             buckets: Vec::new()
         }
     }
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         let min_x = reader.read_f32();
         let min_z = reader.read_f32();
@@ -87,7 +89,7 @@ impl RenderBucketGrid
         }
     }
 
-    pub fn write(&mut self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         let bounds = self.bounds();
         let (max_stick_out_x, max_stick_out_z) = self.max_stick_out();
@@ -107,7 +109,7 @@ impl RenderBucketGrid
         writer.write(self.vertices.len() as u32);
         writer.write(self.indices.len() as u32);
 
-        for vertex in &self.vertices
+        for vertex in &mut self.vertices
         {
             vertex.write(writer);
         }
@@ -115,7 +117,7 @@ impl RenderBucketGrid
         {
             writer.write(*index);
         }
-        for bucketRow in &self.buckets
+        for bucketRow in &mut self.buckets
         {
             for bucket in bucketRow
             {
@@ -191,7 +193,7 @@ impl RenderBucketGrid
 
 impl RenderBucket
 {
-    pub fn read(reader: &mut BinaryReader) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
     {
         RenderBucket
         {
@@ -204,7 +206,7 @@ impl RenderBucket
         }
     }
 
-    pub fn write(&self, writer: &mut BinaryWriter)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
     {
         writer.write(self.max_stick_out_x);
         writer.write(self.max_stick_out_z);

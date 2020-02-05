@@ -165,4 +165,8 @@ impl<T: Read + Seek> BinaryReader<T>
     {
         self.reader.seek(position);
     }
+    pub fn position(&mut self) -> u64
+    {
+        return self.reader.seek(SeekFrom::Current(0)).unwrap();
+    }
 }
