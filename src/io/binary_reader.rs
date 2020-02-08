@@ -1,8 +1,9 @@
-use std::io::{BufReader, Seek, Cursor};
+use std::io::{BufReader, Seek, Cursor, ErrorKind};
 use std::io::Read;
 use std::fs::File;
 use std::io::SeekFrom;
-use std::vec;
+use std::{vec, io};
+use std::path::Path;
 
 pub struct BinaryReader<T: Read = File>
 {
@@ -18,7 +19,7 @@ impl BinaryReader<Cursor<Vec<u8>>>
 }
 impl BinaryReader<File>
 {
-    pub fn from_location(file_location: &str) -> Self
+    pub fn from_location(file_location: &Path) -> Self
     {
         let file = File::open(file_location).unwrap();
 
@@ -32,124 +33,132 @@ impl BinaryReader<File>
 
 impl<T: Read + Seek> BinaryReader<T>
 {
-    pub fn read_char(&mut self) -> char
+    pub fn read_char(&mut self) -> io::Result<char>
     {
-        return self.read_u8() as char;
+        match self.read_u8()
+        {
+            Ok(x) => Ok(x as char),
+            Err(error) => Err(error)
+        }
     }
-    pub fn read_i8(&mut self) -> i8
-    {
-        let mut buffer = [0; 1];
-
-        self.reader.read_exact(&mut buffer);
-
-        return i8::from_le_bytes(buffer);
-    }
-    pub fn read_u8(&mut self) -> u8
+    pub fn read_i8(&mut self) -> io::Result<i8>
     {
         let mut buffer = [0; 1];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return u8::from_le_bytes(buffer);
+        Ok(i8::from_le_bytes(buffer))
     }
-    pub fn read_i16(&mut self) -> i16
+    pub fn read_u8(&mut self) -> io::Result<u8>
+    {
+        let mut buffer = [0; 1];
+
+        self.reader.read_exact(&mut buffer)?;
+
+        Ok(u8::from_le_bytes(buffer))
+    }
+    pub fn read_i16(&mut self) -> io::Result<i16>
     {
         let mut buffer = [0; 2];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return i16::from_le_bytes(buffer);
+        Ok(i16::from_le_bytes(buffer))
     }
-    pub fn read_u16(&mut self) -> u16
+    pub fn read_u16(&mut self) -> io::Result<u16>
     {
         let mut buffer = [0; 2];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return u16::from_le_bytes(buffer);
+        Ok(u16::from_le_bytes(buffer))
     }
-    pub fn read_i32(&mut self) -> i32
+    pub fn read_i32(&mut self) -> io::Result<i32>
     {
         let mut buffer = [0; 4];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return i32::from_le_bytes(buffer);
+        Ok(i32::from_le_bytes(buffer))
     }
-    pub fn read_u32(&mut self) -> u32
+    pub fn read_u32(&mut self) -> io::Result<u32>
     {
         let mut buffer = [0; 4];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return u32::from_le_bytes(buffer);
+        Ok(u32::from_le_bytes(buffer))
     }
-    pub fn read_i64(&mut self) -> i64
+    pub fn read_i64(&mut self) -> io::Result<i64>
     {
         let mut buffer = [0; 8];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return i64::from_le_bytes(buffer);
+        Ok(i64::from_le_bytes(buffer))
     }
-    pub fn read_u64(&mut self) -> u64
+    pub fn read_u64(&mut self) -> io::Result<u64>
     {
         let mut buffer = [0; 8];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return u64::from_le_bytes(buffer);
+        Ok(u64::from_le_bytes(buffer))
     }
-    pub fn read_f32(&mut self) -> f32
+    pub fn read_f32(&mut self) -> io::Result<f32>
     {
         let mut buffer = [0; 4];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return f32::from_le_bytes(buffer);
+        Ok(f32::from_le_bytes(buffer))
     }
-    pub fn read_f64(&mut self) -> f64
+    pub fn read_f64(&mut self) -> io::Result<f64>
     {
         let mut buffer = [0; 8];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return f64::from_le_bytes(buffer);
+        Ok(f64::from_le_bytes(buffer))
     }
 
-    pub fn read_bytes(&mut self, size: usize) -> Vec<u8>
+    pub fn read_bytes(&mut self, size: usize) -> io::Result<Vec<u8>>
     {
         let mut buffer = vec![0; size];
 
-        self.reader.read_exact(&mut buffer);
+        self.reader.read_exact(&mut buffer)?;
 
-        return buffer;
+        Ok(buffer)
     }
-    pub fn read_string(&mut self, length: usize) -> String
+    pub fn read_string(&mut self, length: usize) -> io::Result<String>
     {
-        let buffer = self.read_bytes(length);
+        let buffer = self.read_bytes(length)?;
 
-        return String::from_utf8(buffer).unwrap();
+        match String::from_utf8(buffer)
+        {
+            Ok(x) => Ok(x),
+            Err(error) => Err(io::Error::new(ErrorKind::InvalidData,error.to_string())),
+        }
     }
-    pub fn read_sized_string(&mut self) -> String
+    pub fn read_sized_string(&mut self) -> io::Result<String>
     {
-        let length = self.read_u32() as usize;
+        let length = self.read_u32()? as usize;
 
-        return self.read_string(length);
+        self.read_string(length)
     }
-    pub fn read_padded_string(&mut self, length: usize) -> String
+    pub fn read_padded_string(&mut self, length: usize) -> io::Result<String>
     {
-        let string = self.read_string(length);
-        string[0..string.find('\0').unwrap()].to_string()
+        let string = self.read_string(length)?;
+        Ok(string[0..string.find('\0').unwrap()].to_string())
     }
-    pub fn read_null_terminated_string(&mut self) -> String
+    pub fn read_null_terminated_string(&mut self) -> io::Result<String>
     {
         let mut string = String::new();
 
         let mut c: char;
         loop
         {
-            c = self.read_char();
+            c = self.read_char()?;
 
             match c
             {
@@ -158,12 +167,12 @@ impl<T: Read + Seek> BinaryReader<T>
             }
         }
 
-        return string;
+        Ok(string)
     }
 
-    pub fn seek(&mut self, position: SeekFrom)
+    pub fn seek(&mut self, position: SeekFrom) -> io::Result<u64>
     {
-        self.reader.seek(position);
+        self.reader.seek(position)
     }
     pub fn position(&mut self) -> u64
     {

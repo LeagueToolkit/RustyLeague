@@ -5,9 +5,10 @@ use crate::structures::box3d::Box3D;
 use crate::structures::vector3::Vector3;
 use crate::structures::vector2::Vector2;
 use crate::io::binary_writer::BinaryWriter;
-use std::fs::read;
-use crate::structures::render_bucket_grid::{RenderBucketGrid, RenderBucket};
-use std::io::{Cursor, Write, Seek, Read};
+use crate::structures::render_bucket_grid::{RenderBucketGrid};
+use std::io::{Cursor, Write, Seek, Read, ErrorKind, Error};
+use std::path::Path;
+use std::io;
 
 pub struct WorldGeometry
 {
@@ -43,39 +44,39 @@ impl WorldGeometry
             bucket_grid: bucket_grid_template
         }
     }
-    pub fn read_from_file(file_location: &str) -> Self
+    pub fn read_from_file(file_location: &Path) -> io::Result<Self>
     {
         WorldGeometry::read(&mut BinaryReader::from_location(file_location))
     }
-    pub fn read_from_buffer(buffer: Cursor<Vec<u8>>) -> Self
+    pub fn read_from_buffer(buffer: Cursor<Vec<u8>>) -> io::Result<Self>
     {
         WorldGeometry::read(&mut BinaryReader::from_buffer(buffer))
     }
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        let magic: String = reader.read_string(4);
+        let magic: String = reader.read_string(4)?;
         if &magic != "WGEO"
         {
-            panic!("Not a WGEO file")
+            return Err(Error::new(ErrorKind::InvalidData, "Incorrect file signature"));
         }
 
-        let version: u32 = reader.read_u32();
+        let version: u32 = reader.read_u32()?;
         if version != 5 && version != 4
         {
-            panic!("Unsupported version");
+            return Err(Error::new(ErrorKind::InvalidData, "Unsupported version"));
         }
 
-        WorldGeometry
+        Ok(WorldGeometry
         {
             models:
             {
-                let model_count: u32 = reader.read_u32();
-                let face_count: u32 = reader.read_u32();
+                let model_count: u32 = reader.read_u32()?;
+                let face_count: u32 = reader.read_u32()?;
                 let mut models: Vec<WorldGeometryModel> = Vec::with_capacity(model_count as usize);
 
                 for i in 0..model_count
                 {
-                    models.push(WorldGeometryModel::read(reader));
+                    models.push(WorldGeometryModel::read(reader)?);
                 }
 
                 models
@@ -84,29 +85,29 @@ impl WorldGeometry
             {
                 if version == 5
                 {
-                    RenderBucketGrid::read(reader)
+                    RenderBucketGrid::read(reader)?
                 }
                 else
                 {
                     RenderBucketGrid::empty()
                 }
             }
-        }
+        })
     }
 
-    pub fn write_to_file(&mut self, file_location: &str)
+    pub fn write_to_file(&mut self, file_location: &Path) -> io::Result<()>
     {
-        self.write(&mut BinaryWriter::from_location(file_location));
+        self.write(&mut BinaryWriter::from_location(file_location))
     }
-    pub fn write_to_buffer(&mut self, buffer: Cursor<Vec<u8>>)
+    pub fn write_to_buffer(&mut self, buffer: Cursor<Vec<u8>>) -> io::Result<()>
     {
-        self.write(&mut BinaryWriter::from_buffer(buffer));
+        self.write(&mut BinaryWriter::from_buffer(buffer))
     }
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        writer.write_string("WGEO".to_string());
-        writer.write_u32(5); // Version
-        writer.write_u32(self.models.len() as u32); // Model Count
+        writer.write_string("WGEO".to_string())?;
+        writer.write_u32(5)?; // Version
+        writer.write_u32(self.models.len() as u32)?; // Model Count
 
         let face_count =
             {
@@ -119,14 +120,16 @@ impl WorldGeometry
 
                 face_count
             };
-        writer.write_u32(face_count);
+        writer.write_u32(face_count)?;
 
         for model in &mut self.models
         {
-            model.write(writer);
+            model.write(writer)?;
         }
 
-        self.bucket_grid.write(writer);
+        self.bucket_grid.write(writer)?;
+
+        Ok(())
     }
 
     pub fn add_model(&mut self, model: WorldGeometryModel)
@@ -162,19 +165,19 @@ impl WorldGeometryModel
             indices
         }
     }
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        let texture = reader.read_padded_string(260);
-        let material = reader.read_padded_string(64);
-        let bounding_sphere = Sphere::read(reader);
-        let bounding_box = Box3D::read(reader);
-        let vertex_count = reader.read_u32();
-        let index_count = reader.read_u32();
+        let texture = reader.read_padded_string(260)?;
+        let material = reader.read_padded_string(64)?;
+        let bounding_sphere = Sphere::read(reader)?;
+        let bounding_box = Box3D::read(reader)?;
+        let vertex_count = reader.read_u32()?;
+        let index_count = reader.read_u32()?;
 
         let mut vertices: Vec<WorldGeometryVertex> = Vec::with_capacity(vertex_count as usize);
         for i in 0..vertex_count
         {
-            vertices.push(WorldGeometryVertex::read(reader));
+            vertices.push(WorldGeometryVertex::read(reader)?);
         }
 
         let mut indices: Vec<u32> = Vec::with_capacity(index_count as usize);
@@ -182,18 +185,18 @@ impl WorldGeometryModel
         {
             for i in 0..index_count
             {
-                indices.push(reader.read_u16() as u32);
+                indices.push(reader.read_u16()? as u32);
             }
         }
         else
         {
             for i in 0..index_count
             {
-                indices.push(reader.read_u32());
+                indices.push(reader.read_u32()?);
             }
         }
 
-        WorldGeometryModel
+        Ok(WorldGeometryModel
         {
             texture,
             material,
@@ -201,19 +204,19 @@ impl WorldGeometryModel
             bounding_box,
             vertices,
             indices
-        }
+        })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        writer.write_padded_string(self.texture.clone(), 260);
-        writer.write_padded_string(self.material.clone(), 64);
+        writer.write_padded_string(self.texture.clone(), 260)?;
+        writer.write_padded_string(self.material.clone(), 64)?;
 
-        self.bounding_sphere().write(writer);
-        self.bounding_box().write(writer);
+        self.bounding_sphere().write(writer)?;
+        self.bounding_box().write(writer)?;
 
-        writer.write(self.vertices.len() as u32);
-        writer.write(self.indices.len() as u32);
+        writer.write(self.vertices.len() as u32)?;
+        writer.write(self.indices.len() as u32)?;
 
         for vertex in &mut self.vertices
         {
@@ -224,16 +227,18 @@ impl WorldGeometryModel
         {
             for index in &self.indices
             {
-                writer.write(*index as u16);
+                writer.write(*index as u16)?;
             }
         }
         else
         {
             for index in &self.indices
             {
-                writer.write(*index as u32);
+                writer.write(*index as u32)?;
             }
         }
+
+        Ok(())
     }
 
     pub fn central_point(&mut self) -> Vector3
@@ -310,18 +315,20 @@ impl WorldGeometryVertex
             uv
         }
     }
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        WorldGeometryVertex
+        Ok(WorldGeometryVertex
         {
-            position: Vector3::read(reader),
-            uv: Vector2::read(reader)
-        }
+            position: Vector3::read(reader)?,
+            uv: Vector2::read(reader)?
+        })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        self.position.write(writer);
-        self.uv.write(writer);
+        self.position.write(writer)?;
+        self.uv.write(writer)?;
+
+        Ok(())
     }
 }

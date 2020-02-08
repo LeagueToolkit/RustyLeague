@@ -3,6 +3,7 @@ use crate::structures::vector3::Vector3;
 use crate::structures::box3d::Box3D;
 use crate::io::binary_writer::BinaryWriter;
 use std::io::{Read, Seek, Write};
+use std::io;
 
 #[derive(Clone)]
 pub struct RenderBucketGrid
@@ -36,32 +37,32 @@ impl RenderBucketGrid
             buckets: Vec::new()
         }
     }
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        let min_x = reader.read_f32();
-        let min_z = reader.read_f32();
-        let max_x = reader.read_f32();
-        let max_z = reader.read_f32();
-        let max_stick_out_x = reader.read_f32();
-        let max_stick_out_z = reader.read_f32();
-        let bucket_size_x = reader.read_f32();
-        let bucket_size_z = reader.read_f32();
+        let min_x = reader.read_f32()?;
+        let min_z = reader.read_f32()?;
+        let max_x = reader.read_f32()?;
+        let max_z = reader.read_f32()?;
+        let max_stick_out_x = reader.read_f32()?;
+        let max_stick_out_z = reader.read_f32()?;
+        let bucket_size_x = reader.read_f32()?;
+        let bucket_size_z = reader.read_f32()?;
 
-        let buckets_per_side = reader.read_u16();
-        let unknown = reader.read_u16();
-        let vertex_count = reader.read_u32();
-        let index_count = reader.read_u32();
+        let buckets_per_side = reader.read_u16()?;
+        let unknown = reader.read_u16()?;
+        let vertex_count = reader.read_u32()?;
+        let index_count = reader.read_u32()?;
         let mut vertices: Vec<Vector3> = Vec::with_capacity(vertex_count as usize);
         let mut indices: Vec<u16> = Vec::with_capacity(index_count as usize);
         let mut buckets: Vec<Vec<RenderBucket>> = Vec::with_capacity(buckets_per_side as usize);
 
         for i in 0..vertex_count
         {
-            vertices.push(Vector3::read(reader));
+            vertices.push(Vector3::read(reader)?);
         }
         for i in 0..index_count
         {
-            indices.push(reader.read_u16());
+            indices.push(reader.read_u16()?);
         }
         for i in 0..buckets_per_side
         {
@@ -69,13 +70,13 @@ impl RenderBucketGrid
 
             for j in 0..buckets_per_side
             {
-                bucket_row.push(RenderBucket::read(reader));
+                bucket_row.push(RenderBucket::read(reader)?);
             }
 
             buckets.push(bucket_row);
         }
 
-        RenderBucketGrid
+        Ok(RenderBucketGrid
         {
             bounds:
             {
@@ -86,44 +87,46 @@ impl RenderBucketGrid
             vertices,
             indices,
             buckets
-        }
+        })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
         let bounds = self.bounds();
         let (max_stick_out_x, max_stick_out_z) = self.max_stick_out();
         let (bucket_size_x, bucket_size_z) = self.bucket_size();
         let buckets_per_side = self.buckets_per_side();
 
-        writer.write(bounds.min.x);
-        writer.write(bounds.min.z);
-        writer.write(bounds.max.x);
-        writer.write(bounds.max.x);
-        writer.write(max_stick_out_x);
-        writer.write(max_stick_out_z);
-        writer.write(bucket_size_x);
-        writer.write(bucket_size_z);
-        writer.write(buckets_per_side);
-        writer.write(0 as u16);
-        writer.write(self.vertices.len() as u32);
-        writer.write(self.indices.len() as u32);
+        writer.write(bounds.min.x)?;
+        writer.write(bounds.min.z)?;
+        writer.write(bounds.max.x)?;
+        writer.write(bounds.max.x)?;
+        writer.write(max_stick_out_x)?;
+        writer.write(max_stick_out_z)?;
+        writer.write(bucket_size_x)?;
+        writer.write(bucket_size_z)?;
+        writer.write(buckets_per_side)?;
+        writer.write(0 as u16)?;
+        writer.write(self.vertices.len() as u32)?;
+        writer.write(self.indices.len() as u32)?;
 
         for vertex in &mut self.vertices
         {
-            vertex.write(writer);
+            vertex.write(writer)?;
         }
         for index in &self.indices
         {
-            writer.write(*index);
+            writer.write(*index)?;
         }
         for bucketRow in &mut self.buckets
         {
             for bucket in bucketRow
             {
-                bucket.write(writer);
+                bucket.write(writer)?;
             }
         }
+
+        Ok(())
     }
 
     pub fn bounds(&mut self) -> Box3D
@@ -193,27 +196,29 @@ impl RenderBucketGrid
 
 impl RenderBucket
 {
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        RenderBucket
+        Ok(RenderBucket
         {
-            max_stick_out_x: reader.read_f32(),
-            max_stick_out_z: reader.read_f32(),
-            start_index: reader.read_u32(),
-            base_vertex: reader.read_u32(),
-            inside_face_count: reader.read_u16(),
-            sticking_out_face_count: reader.read_u16()
-        }
+            max_stick_out_x: reader.read_f32()?,
+            max_stick_out_z: reader.read_f32()?,
+            start_index: reader.read_u32()?,
+            base_vertex: reader.read_u32()?,
+            inside_face_count: reader.read_u16()?,
+            sticking_out_face_count: reader.read_u16()?
+        })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        writer.write(self.max_stick_out_x);
-        writer.write(self.max_stick_out_z);
-        writer.write(self.start_index);
-        writer.write(self.base_vertex);
-        writer.write(self.inside_face_count);
-        writer.write(self.sticking_out_face_count);
+        writer.write(self.max_stick_out_x)?;
+        writer.write(self.max_stick_out_z)?;
+        writer.write(self.start_index)?;
+        writer.write(self.base_vertex)?;
+        writer.write(self.inside_face_count)?;
+        writer.write(self.sticking_out_face_count)?;
+
+        Ok(())
     }
 
     pub fn max_stick_out(&self) -> (f32, f32)

@@ -2,8 +2,9 @@ use super::vector3::Vector3;
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 use std::io::{Write, Seek, Read};
+use std::io;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Sphere
 {
     pub center: Vector3,
@@ -30,18 +31,20 @@ impl Sphere
             radius
         }
     }
-    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> Self
+    pub fn read<T: Read + Seek>(reader: &mut BinaryReader<T>) -> io::Result<Self>
     {
-        Sphere
+        Ok(Sphere
         {
-            center: Vector3::read(reader),
-            radius: reader.read_f32()
-        }
+            center: Vector3::read(reader)?,
+            radius: reader.read_f32()?
+        })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>)
+    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        self.center.write(writer);
-        writer.write(self.radius);
+        self.center.write(writer)?;
+        writer.write(self.radius)?;
+
+        Ok(())
     }
 }
