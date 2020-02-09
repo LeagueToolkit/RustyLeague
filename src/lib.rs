@@ -1,5 +1,7 @@
 pub mod io;
 pub mod structures;
+#[macro_use]
+extern crate bitflags;
 
 #[cfg(test)]
 mod tests
@@ -10,6 +12,7 @@ mod tests
     use std::fs::File;
     use std::path::Path;
     use std::io::{Write, Read};
+    use crate::io::static_object::StaticObject;
 
     #[test]
     fn test_wgeo()
@@ -34,18 +37,22 @@ mod tests
     fn test_simple_skin()
     {
         let mut simple_skin = SimpleSkin::read_from_file(Path::new("test_files/aatrox.skn"));
-
-        let s = format!("{:#?}", simple_skin);
-
-        {
-            let mut file = File::create("kek.txt").unwrap();
-            file.write(&s.as_bytes());
-        }
-
         assert!(simple_skin.is_ok());
 
         let write_result = simple_skin.unwrap().write_to_file(&Path::new("test_files/aatrox_write.skn"));
-
         assert!(write_result.is_ok());
+    }
+
+    #[test]
+    fn test_static_object()
+    {
+        let mut static_object = StaticObject::read_scb_from_file(Path::new("test_files/aatrox_base_w_ground_ring.scb"));
+
+        {
+            let mut file = File::create("kek.txt").unwrap();
+            file.write(&format!("{:#?}", static_object).as_bytes());
+        }
+
+        assert!(static_object.is_ok())
     }
 }

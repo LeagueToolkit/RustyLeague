@@ -1,6 +1,6 @@
 use crate::structures::vector3::Vector3;
 use crate::structures::vector2::Vector2;
-use crate::structures::color_rgba::ColorRGBA;
+use crate::structures::color::Color;
 use std::io::{Seek, Read, Cursor, Write, Error, ErrorKind};
 use crate::io::binary_reader::BinaryReader;
 use crate::structures::box3d::Box3D;
@@ -40,7 +40,7 @@ pub struct SimpleSkinVertex
     pub weights: [f32; 4],
     pub normal: Vector3,
     pub uv: Vector2,
-    pub color: Option<ColorRGBA<u8>>
+    pub color: Option<Color<u8>>
 }
 
 impl SimpleSkin
@@ -178,7 +178,6 @@ impl SimpleSkin
 
             if submesh.contains_vertex_color()
             {
-                println!("true");
                 contains_vertex_color = true;
             }
         }
@@ -205,10 +204,9 @@ impl SimpleSkin
             {
                 if vertex.color.is_none() && contains_vertex_color
                 {
-                    println!("color vertex");
                     // Clone vertex so we don't modify mesh data but save a correct file
                     let mut color_vertex = vertex.clone();
-                    color_vertex.color = Option::from(ColorRGBA::new_u8(0, 0, 0, 0));
+                    color_vertex.color = Option::from(Color::new_rgba_u8(0, 0, 0, 0));
                     color_vertex.write(writer)?;
                 }
                 else
@@ -378,7 +376,7 @@ impl SimpleSkinVertex
         }
     }
     pub fn new_color(position: Vector3, influences: [u8; 4], weights: [f32; 4],
-                 normal: Vector3, uv: Vector2, color: ColorRGBA<u8>) -> Self
+                     normal: Vector3, uv: Vector2, color: Color<u8>) -> Self
     {
         SimpleSkinVertex
         {
@@ -411,7 +409,7 @@ impl SimpleSkinVertex
             ],
             normal: Vector3::read(reader)?,
             uv: Vector2::read(reader)?,
-            color: if vertex_type == 1 { Option::Some(ColorRGBA::read_u8(reader)?) } else { Option::None }
+            color: if vertex_type == 1 { Option::Some(Color::read_rgba_u8(reader)?) } else { Option::None }
         })
     }
 
@@ -433,7 +431,7 @@ impl SimpleSkinVertex
 
         match self.color
         {
-            Some(x) => x.write_u8(writer),
+            Some(x) => x.write_rgba_u8(writer),
             None => { Ok(()) }
         }
     }
