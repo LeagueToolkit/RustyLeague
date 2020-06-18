@@ -1,6 +1,5 @@
 use crate::structures::vector3::Vector3;
 use crate::structures::vector2::Vector2;
-use crate::structures::color::Color;
 use std::io::{Seek, Read, Cursor, Write, Error, ErrorKind};
 use crate::io::binary_reader::BinaryReader;
 use crate::structures::box3d::Box3D;
@@ -9,6 +8,8 @@ use std::ops::SubAssign;
 use crate::io::binary_writer::BinaryWriter;
 use std::io;
 use std::path::Path;
+use palette::LinSrgba;
+use crate::structures::color::ColorRgba;
 
 #[derive(Debug)]
 pub struct SimpleSkin
@@ -40,7 +41,7 @@ pub struct SimpleSkinVertex
     pub weights: [f32; 4],
     pub normal: Vector3,
     pub uv: Vector2,
-    pub color: Option<Color<u8>>
+    pub color: Option<LinSrgba>
 }
 
 impl SimpleSkin
@@ -173,8 +174,8 @@ impl SimpleSkin
         {
             submesh.write(vertex_offset, index_offset, writer)?;
 
-            vertex_offset += submesh.vertex_count;
-            index_offset += submesh.index_count;
+            vertex_offset += submesh.vertices.len() as u32;
+            index_offset += submesh.indices.len() as u32;
 
             if submesh.contains_vertex_color()
             {
@@ -191,12 +192,15 @@ impl SimpleSkin
         self.bounding_box().write(writer)?;
         self.bounding_sphere().write(writer)?;
 
+        let mut index_offset = 0u16;
         for submesh in self.submeshes()
         {
             for index in submesh.indices()
             {
-                writer.write(*index)?;
+                writer.write(*index + index_offset)?;
             }
+
+            index_offset += submesh.indices.len() as u16;
         }
         for submesh in self.submeshes()
         {
@@ -206,7 +210,7 @@ impl SimpleSkin
                 {
                     // Clone vertex so we don't modify mesh data but save a correct file
                     let mut color_vertex = vertex.clone();
-                    color_vertex.color = Option::from(Color::new_rgba_u8(0, 0, 0, 0));
+                    color_vertex.color = Option::from(LinSrgba::new(0.0, 0.0, 0.0, 0.0));
                     color_vertex.write(writer)?;
                 }
                 else
@@ -376,7 +380,7 @@ impl SimpleSkinVertex
         }
     }
     pub fn new_color(position: Vector3, influences: [u8; 4], weights: [f32; 4],
-                     normal: Vector3, uv: Vector2, color: Color<u8>) -> Self
+                     normal: Vector3, uv: Vector2, color: LinSrgba) -> Self
     {
         SimpleSkinVertex
         {
@@ -409,7 +413,7 @@ impl SimpleSkinVertex
             ],
             normal: Vector3::read(reader)?,
             uv: Vector2::read(reader)?,
-            color: if vertex_type == 1 { Option::Some(Color::read_rgba_u8(reader)?) } else { Option::None }
+            color: if vertex_type == 1 { Option::Some(LinSrgba::read_rgba_u8(reader)?) } else { Option::None }
         })
     }
 

@@ -1,7 +1,9 @@
 pub mod io;
 pub mod structures;
-#[macro_use]
-extern crate bitflags;
+pub mod utilities;
+
+#[macro_use] extern crate bitflags;
+#[macro_use] extern crate num_derive;
 
 #[cfg(test)]
 mod tests
@@ -13,6 +15,8 @@ mod tests
     use std::path::Path;
     use std::io::{Write, Read};
     use crate::io::static_object::StaticObject;
+    use crate::io::bin::BinReader;
+    use std::io;
 
     #[test]
     fn test_wgeo()
@@ -54,5 +58,19 @@ mod tests
         }
 
         assert!(static_object.is_ok())
+    }
+
+    #[test]
+    fn test_bin() -> io::Result<()> {
+        let mut bin = BinReader::read_tree_file(Path::new("test_files/skin0.bin"));
+
+        assert!(bin.is_ok());
+
+        {
+            let mut file = File::create("kek.txt")?;
+            file.write(&format!("{:#?}", bin).as_bytes());
+        }
+
+        Ok(())
     }
 }

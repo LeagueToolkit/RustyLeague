@@ -1,6 +1,5 @@
 use bitflags;
 use crate::structures::vector3::Vector3;
-use crate::structures::color::Color;
 use crate::structures::box3d::Box3D;
 use std::path::Path;
 use std::io::{Cursor, Seek, Read, Error, ErrorKind};
@@ -10,6 +9,8 @@ use std::fs::read;
 use crate::structures::vector2::Vector2;
 use std::collections::HashMap;
 use std::ops::SubAssign;
+use palette::LinSrgba;
+use crate::structures::color::ColorRgba;
 
 bitflags!
 {
@@ -39,7 +40,7 @@ pub struct StaticObjectVertex
 {
     pub position: Vector3,
     pub uv: Vector2,
-    pub color: Option<Color<u8>>
+    pub color: Option<LinSrgba>
 }
 
 struct StaticObjectFace
@@ -82,7 +83,7 @@ impl StaticObject
         let has_vertex_colors = if major == 3 && minor == 2 { reader.read_u32()? == 1 } else { false };
 
         let mut vertices: Vec<Vector3> = Vec::with_capacity(vertex_count as usize);
-        let mut vertex_colors: Vec<Color<u8>> = Vec::default();
+        let mut vertex_colors: Vec<LinSrgba> = Vec::default();
         for i in 0..vertex_count
         {
             vertices.push(Vector3::read(reader)?);
@@ -93,7 +94,7 @@ impl StaticObject
 
             for i in 0..vertex_count
             {
-                vertex_colors.push(Color::read_rgba_u8(reader)?);
+                vertex_colors.push(LinSrgba::read_rgba_u8(reader)?);
             }
         }
 
@@ -113,9 +114,8 @@ impl StaticObject
         })
     }
 
-    fn create_submeshes(vertices: &Vec<Vector3>, vertex_colors: &Vec<Color<u8>>,
-                        faces: &Vec<StaticObjectFace>) -> Vec<StaticObjectSubmesh>
-    {
+    fn create_submeshes(vertices: &Vec<Vector3>, vertex_colors: &Vec<LinSrgba>,
+                        faces: &Vec<StaticObjectFace>) -> Vec<StaticObjectSubmesh> {
         let has_vertex_colors = vertex_colors.len() != 0;
         let submesh_map = StaticObject::create_submesh_map(faces);
         let mut submeshes: Vec<StaticObjectSubmesh> = Vec::with_capacity(submesh_map.len());
@@ -237,7 +237,7 @@ impl StaticObjectVertex
             color: Option::None
         }
     }
-    pub fn new_color(position: Vector3, uv: Vector2, color: Color<u8>) -> Self
+    pub fn new_color(position: Vector3, uv: Vector2, color: LinSrgba) -> Self
     {
         StaticObjectVertex
         {
