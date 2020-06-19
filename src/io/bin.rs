@@ -10,9 +10,11 @@ use palette::LinSrgba;
 use std::collections::HashMap;
 use crate::structures::color::ColorRgba;
 use num_traits::FromPrimitive;
+use num_traits::ToPrimitive;
 use std::hash::{Hash, Hasher};
-use std::collections::hash_map::Entry::Occupied;
 use crate::utilities::hashing::StringHasher;
+use crate::io::binary_writer::BinaryWriter;
+use std::mem;
 
 #[derive(Debug)]
 pub struct BinTree {
@@ -107,6 +109,7 @@ pub struct BinMap {
 }
 
 pub struct BinReader;
+pub struct BinWriter;
 
 impl BinReader {
     pub fn read_tree_file(path: &Path) -> io::Result<BinTree> {
@@ -154,6 +157,41 @@ impl BinReader {
     }
 }
 
+impl BinWriter {
+    pub fn write_tree_file(tree: &BinTree, path: &Path) -> io::Result<()> {
+        BinWriter::write_tree(tree, &mut BinaryWriter::from_location(path))
+    }
+    pub fn write_tree_buffer(tree: &BinTree, buffer: Cursor<Vec<u8>>) -> io::Result<()> {
+        BinWriter::write_tree(tree, &mut BinaryWriter::from_buffer(buffer))
+    }
+    pub fn write_tree<W: Write + Seek>(tree: &BinTree, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        writer.write_string("PROP")?; // Magic
+        writer.write_u32(2)?; // Version
+
+        writer.write_u32(tree.dependencies().len() as u32)?;
+        for dependency in tree.dependencies() {
+            writer.write_u16(dependency.len() as u16)?;
+            writer.write_string(dependency)?;
+        }
+
+        writer.write_u32(tree.entries().len() as u32)?;
+        for entry in tree.entries() {
+            writer.write_u32(entry.class())?;
+        }
+        for entry in tree.entries() {
+            entry.write(writer)?;
+        }
+
+        Ok(())
+    }
+
+}
+
+impl BinTree {
+    pub fn dependencies(&self) -> &Vec<String> { &self.dependencies }
+    pub fn entries(&self) -> &Vec<BinEntry> { &self.entries }
+}
+
 impl BinEntry {
     pub fn read<R: Read + Seek>(class: u32, reader: &mut BinaryReader<R>) -> io::Result<Self> {
         let size = reader.read_u32()?;
@@ -171,6 +209,31 @@ impl BinEntry {
             values
         })
     }
+
+    pub(crate) fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        writer.write_u32(self.size() as u32)?;
+        writer.write_u32(self.path)?;
+
+        writer.write_u16(self.values.len() as u16)?;
+        for value in &self.values {
+            value.write(writer)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn class(&self) -> u32 { self.class }
+    pub fn path(&self) -> u32 { self.path }
+    pub fn values(&self) -> &Vec<BinValue> { &self.values }
+
+    pub(crate) fn size(&self) -> usize {
+        let mut size = 6usize;
+        for value in &self.values {
+            size += value.size(false);
+        }
+
+        size
+    }
 }
 
 impl BinValue {
@@ -180,7 +243,6 @@ impl BinValue {
 
         BinValue::read_value(name, value_type, reader)
     }
-
     fn read_value<R: Read + Seek>(name: u32, value_type: BinValueType, reader: &mut BinaryReader<R>) -> io::Result<Self> {
         Ok(match value_type {
             BinValueType::None         => BinValue::None         { name },
@@ -211,9 +273,7 @@ impl BinValue {
             BinValueType::Color        => BinValue::Color        { name, value: LinSrgba::read_rgba_u8(reader)?},
             BinValueType::String       => BinValue::String       { name, value: {
                 let length = reader.read_u16()? as usize;
-                println!("{}", length);
                 let s = reader.read_string(length)?;
-                println!("{}", s);
                 s
             }},
             BinValueType::Hash         => BinValue::Hash         { name, value: reader.read_u32()?},
@@ -243,6 +303,90 @@ impl BinValue {
         }
     }
 
+    pub(crate) fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>, ) -> io::Result<()> {
+        match self {
+            BinValue::None         { name     } => { writer.write_u32(*name)?; },
+            BinValue::Boolean      { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::SByte        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Byte         { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Int16        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::UInt16       { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Int32        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::UInt32       { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Int64        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::UInt64       { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Float        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Vector2      { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Vector3      { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Vector4      { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Matrix44     { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Color        { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::String       { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Hash         { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Container    { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Container2   { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Structure    { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Embedded     { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Link         { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Optional     { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::Map          { name, .. } => { writer.write_u32(*name)?; },
+            BinValue::FlagsBoolean { name, .. } => { writer.write_u32(*name)?; }
+        };
+
+        writer.write_u8(BinValue::pack_value_type(self.value_type()))?;
+        self.write_value(writer)?;
+
+        Ok(())
+    }
+    pub(crate) fn write_value<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        match self {
+            BinValue::None         { name } => { },
+            BinValue::Boolean      { name, value } => { writer.write_u8(*value as u8)?; },
+            BinValue::SByte        { name, value } => { writer.write_i8(*value)?; },
+            BinValue::Byte         { name, value } => { writer.write_u8(*value)?; },
+            BinValue::Int16        { name, value } => { writer.write_i16(*value)?; },
+            BinValue::UInt16       { name, value } => { writer.write_u16(*value)?; },
+            BinValue::Int32        { name , value} => { writer.write_i32(*value)?; },
+            BinValue::UInt32       { name, value } => { writer.write_u32(*value)?; },
+            BinValue::Int64        { name , value} => { writer.write_i64(*value)?; },
+            BinValue::UInt64       { name, value } => { writer.write_u64(*value)?; },
+            BinValue::Float        { name , value} => { writer.write_f32(*value)?; },
+            BinValue::Vector2      { name , value} => { value.write(writer)?; },
+            BinValue::Vector3      { name , value} => { value.write(writer)?; },
+            BinValue::Vector4      { name , value} => { value.write(writer)?; },
+            BinValue::Matrix44     { name, value } => {
+                for row in value.iter() {
+                    for entry in row.iter() {
+                        writer.write_f32(*entry)?;
+                    }
+                }
+            },
+            BinValue::Color        { name, value } => { value.write_rgba_u8(writer)?; },
+            BinValue::String       { name, value } => {
+                writer.write_u16(value.len() as u16)?;
+                writer.write_string(value)?;
+            },
+            BinValue::Hash         { name, value } => { writer.write_u32(*value)?; },
+            BinValue::Container    { name, value } => { value.write(writer)?; },
+            BinValue::Container2   { name, value } => { value.write(writer)?; },
+            BinValue::Structure    { name, value } => { value.write(writer)?; },
+            BinValue::Embedded     { name, value } => { value.write(writer)?; },
+            BinValue::Link         { name, value } => { writer.write_u32(*value)?; },
+            BinValue::Optional     { name, value_type, value } => {
+                writer.write_u8(BinValue::pack_value_type(*value_type))?;
+                writer.write_u8(value.is_some() as u8)?;
+
+                if let Some(option) = value {
+                    option.write_value(writer)?;
+                }
+            },
+            BinValue::Map          { name, value } => { value.write(writer)?; },
+            BinValue::FlagsBoolean { name, value } => { writer.write_u8(*value as u8)?; }
+        };
+
+        Ok(())
+    }
+
     fn unpack_value_type(mut value_type: u8) -> BinValueType {
         if value_type & 128 == 128
         {
@@ -251,6 +395,85 @@ impl BinValue {
         }
 
         return BinValueType::from_u8(value_type).expect("Invalid Value type");
+    }
+    fn pack_value_type(value_type: BinValueType) -> u8 {
+        let mut value_type = value_type.to_u8().expect("Invalid Value Type");
+
+        if value_type >= 18 && value_type <= 24
+        {
+            value_type = (value_type - 18) | 128;
+        }
+
+        value_type
+    }
+
+    pub fn value_type(&self) -> BinValueType {
+        match self {
+            BinValue::None         { .. } => { BinValueType::None         },
+            BinValue::Boolean      { .. } => { BinValueType::Boolean      },
+            BinValue::SByte        { .. } => { BinValueType::SByte        },
+            BinValue::Byte         { .. } => { BinValueType::Byte         },
+            BinValue::Int16        { .. } => { BinValueType::Int16        },
+            BinValue::UInt16       { .. } => { BinValueType::UInt16       },
+            BinValue::Int32        { .. } => { BinValueType::Int32        },
+            BinValue::UInt32       { .. } => { BinValueType::UInt32       },
+            BinValue::Int64        { .. } => { BinValueType::Int64        },
+            BinValue::UInt64       { .. } => { BinValueType::UInt64       },
+            BinValue::Float        { .. } => { BinValueType::Float        },
+            BinValue::Vector2      { .. } => { BinValueType::Vector2      },
+            BinValue::Vector3      { .. } => { BinValueType::Vector3      },
+            BinValue::Vector4      { .. } => { BinValueType::Vector4      },
+            BinValue::Matrix44     { .. } => { BinValueType::Matrix44     },
+            BinValue::Color        { .. } => { BinValueType::Color        },
+            BinValue::String       { .. } => { BinValueType::String       },
+            BinValue::Hash         { .. } => { BinValueType::Hash         },
+            BinValue::Container    { .. } => { BinValueType::Container    },
+            BinValue::Container2   { .. } => { BinValueType::Container2   },
+            BinValue::Structure    { .. } => { BinValueType::Structure    },
+            BinValue::Embedded     { .. } => { BinValueType::Embedded     },
+            BinValue::Link         { .. } => { BinValueType::Link         },
+            BinValue::Optional     { .. } => { BinValueType::Optional     },
+            BinValue::Map          { .. } => { BinValueType::Map          },
+            BinValue::FlagsBoolean { .. } => { BinValueType::FlagsBoolean }
+        }
+    }
+
+    pub(crate) fn size(&self, is_simple: bool) -> usize {
+        let type_size = if is_simple { 0 } else { 5usize };
+        let value_size = match self {
+            BinValue::None         { name } => { 0 },
+            BinValue::Boolean      { name, value } => { mem::size_of::<u8>() },
+            BinValue::SByte        { name, value } => { mem::size_of::<i8>() },
+            BinValue::Byte         { name, value } => { mem::size_of::<u8>() },
+            BinValue::Int16        { name, value } => { mem::size_of::<i16>() },
+            BinValue::UInt16       { name, value } => { mem::size_of::<u16>() },
+            BinValue::Int32        { name , value} => { mem::size_of::<i32>() },
+            BinValue::UInt32       { name, value } => { mem::size_of::<u32>() },
+            BinValue::Int64        { name , value} => { mem::size_of::<i64>() },
+            BinValue::UInt64       { name, value } => { mem::size_of::<u64>() },
+            BinValue::Float        { name , value} => { mem::size_of::<f32>() },
+            BinValue::Vector2      { name , value} => { mem::size_of::<Vector2>() },
+            BinValue::Vector3      { name , value} => { mem::size_of::<Vector3>() },
+            BinValue::Vector4      { name , value} => { mem::size_of::<Vector4>() },
+            BinValue::Matrix44     { name, value } => { mem::size_of::<[[f32; 4]; 4]>() },
+            BinValue::Color        { name, value } => { 4 },
+            BinValue::String       { name, value } => { value.len() + 2 },
+            BinValue::Hash         { name, value } => { mem::size_of::<u32>() },
+            BinValue::Container    { name, value } => { value.size() },
+            BinValue::Container2   { name, value } => { value.size() },
+            BinValue::Structure    { name, value } => { value.size() },
+            BinValue::Embedded     { name, value } => { value.size() },
+            BinValue::Link         { name, value } => { mem::size_of::<u32>() },
+            BinValue::Optional     { name, value_type, value } => {
+                2 + if let Some(option) = value {
+                    option.size(true)
+                } else { 0 }
+            },
+            BinValue::Map          { name, value } => { value.size() },
+            BinValue::FlagsBoolean { name, value } => { mem::size_of::<u8>() }
+        };
+
+        type_size + value_size
     }
 }
 
@@ -277,6 +500,34 @@ impl BinStructure {
             })
         }
     }
+
+    pub(crate) fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        writer.write_u32(self.name)?;
+        if self.name != 0 {
+            writer.write_u32(self.content_size() as u32)?;
+
+            writer.write_u16(self.fields.len() as u16)?;
+            for field in &self.fields {
+                field.write(writer)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn size(&self) -> usize {
+        if self.name == 0 { 4 }
+        else { 4 + 4 + self.content_size() }
+    }
+
+    pub(crate) fn content_size(&self) -> usize {
+        let mut size = 2usize;
+        for field in &self.fields {
+            size += field.size(false);
+        }
+
+        size
+    }
 }
 
 impl BinContainer {
@@ -294,6 +545,31 @@ impl BinContainer {
             value_type,
             values
         })
+    }
+
+    pub(crate) fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        writer.write_u8(BinValue::pack_value_type(self.value_type))?;
+        writer.write_u32(self.content_size() as u32)?;
+
+        writer.write_u32(self.values.len() as u32)?;
+        for value in &self.values {
+            value.write_value(writer)?;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn size(&self) -> usize {
+        1 + 4 + self.content_size()
+    }
+
+    pub(crate) fn content_size(&self) -> usize {
+        let mut size = 4usize;
+        for value in &self.values {
+            size += value.size(true);
+        }
+
+        size
     }
 }
 
@@ -314,6 +590,33 @@ impl BinMap {
             value_type,
             map
         })
+    }
+
+    pub(crate) fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
+        writer.write_u8(BinValue::pack_value_type(self.key_type))?;
+        writer.write_u8(BinValue::pack_value_type(self.value_type))?;
+        writer.write_u32(self.content_size() as u32)?;
+
+        writer.write_u32(self.map.len() as u32)?;
+        for (key, value) in &self.map {
+            key.write_value(writer)?;
+            value.write_value(writer)?;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn size(&self) -> usize {
+        1 + 1 + 4 + self.content_size()
+    }
+
+    pub(crate) fn content_size(&self) -> usize {
+        let mut size = 4usize;
+        for (key, value) in &self.map {
+            size += key.size(true) + value.size(true);
+        }
+
+        size
     }
 }
 

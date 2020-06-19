@@ -33,7 +33,7 @@ impl Vector3
         })
     }
 
-    pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
+    pub fn write<T: Write + Seek>(&self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
         writer.write(self.x)?;
         writer.write(self.y)?;

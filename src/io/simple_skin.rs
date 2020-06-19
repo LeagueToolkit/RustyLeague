@@ -333,7 +333,7 @@ impl SimpleSkinSubmesh
     fn write<T: Write + Seek>(&self, start_vertex: u32, start_index: u32, writer: &mut BinaryWriter<T>)
     -> io::Result<()>
     {
-        writer.write_padded_string(self.name.clone(), 64)?;
+        writer.write_padded_string(&self.name, 64)?;
         writer.write_u32(start_vertex)?;
         writer.write_u32(self.vertices.len() as u32)?;
         writer.write_u32(start_index)?;

@@ -15,7 +15,7 @@ mod tests
     use std::path::Path;
     use std::io::{Write, Read};
     use crate::io::static_object::StaticObject;
-    use crate::io::bin::BinReader;
+    use crate::io::bin::{BinReader, BinWriter};
     use std::io;
 
     #[test]
@@ -70,6 +70,14 @@ mod tests
             let mut file = File::create("kek.txt")?;
             file.write(&format!("{:#?}", bin).as_bytes());
         }
+
+        if let Ok(bin) = bin {
+            BinWriter::write_tree_file(&bin, &Path::new("test_files/skin0_write.bin"))?;
+
+            let mut bin = BinReader::read_tree_file(Path::new("test_files/skin0_write.bin"))?;
+            //assert!(bin.is_ok());
+        }
+
 
         Ok(())
     }

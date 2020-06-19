@@ -1,7 +1,6 @@
 use std::io::{Seek, Read, Write};
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
-use std::fmt::Debug;
 use std::io;
 use palette::{LinSrgba, LinSrgb};
 

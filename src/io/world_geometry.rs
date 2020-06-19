@@ -105,7 +105,7 @@ impl WorldGeometry
     }
     pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        writer.write_string("WGEO".to_string())?;
+        writer.write_string("WGEO")?;
         writer.write_u32(5)?; // Version
         writer.write_u32(self.models.len() as u32)?; // Model Count
 
@@ -209,8 +209,8 @@ impl WorldGeometryModel
 
     pub fn write<T: Write + Seek>(&mut self, writer: &mut BinaryWriter<T>) -> io::Result<()>
     {
-        writer.write_padded_string(self.texture.clone(), 260)?;
-        writer.write_padded_string(self.material.clone(), 64)?;
+        writer.write_padded_string(&self.texture, 260)?;
+        writer.write_padded_string(&self.material, 64)?;
 
         self.bounding_sphere().write(writer)?;
         self.bounding_box().write(writer)?;

@@ -1,4 +1,4 @@
-use std::hash::{Hasher, Hash};
+use std::hash::{Hasher};
 
 pub trait StringHasher {
     fn hash_string_lc(&mut self, string: &str) -> u64;

@@ -5,7 +5,6 @@ use std::path::Path;
 use std::io::{Cursor, Seek, Read, Error, ErrorKind};
 use crate::io::binary_reader::BinaryReader;
 use std::io;
-use std::fs::read;
 use crate::structures::vector2::Vector2;
 use std::collections::HashMap;
 use std::ops::SubAssign;

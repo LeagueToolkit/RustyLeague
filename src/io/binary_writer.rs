@@ -92,11 +92,11 @@ impl<T: Write + Seek> BinaryWriter<T>
     {
         self.writer.write(to_write.as_slice())
     }
-    pub fn write_string(&mut self, to_write: String) -> io::Result<usize>
+    pub fn write_string(&mut self, to_write: &str) -> io::Result<usize>
     {
         self.writer.write(to_write.as_bytes())
     }
-    pub fn write_padded_string(&mut self, to_write: String, length: usize) -> io::Result<usize>
+    pub fn write_padded_string(&mut self, to_write: &str, length: usize) -> io::Result<usize>
     {
         let pad_count = length - to_write.len();
         let mut pad_buffer: Vec<u8> = Vec::with_capacity(pad_count);
@@ -108,12 +108,12 @@ impl<T: Write + Seek> BinaryWriter<T>
         self.write_string(to_write)?;
         self.write_bytes(pad_buffer)
     }
-    pub fn write_sized_string(&mut self, to_write: String) -> io::Result<usize>
+    pub fn write_sized_string(&mut self, to_write: &str) -> io::Result<usize>
     {
         self.write_u32(to_write.len() as u32)?;
         self.write_string(to_write)
     }
-    pub fn write_null_terminated_string(&mut self, to_write: String) -> io::Result<usize>
+    pub fn write_null_terminated_string(&mut self, to_write: &str) -> io::Result<usize>
     {
         self.write_string(to_write)?;
         self.write_u8(0)
@@ -228,6 +228,6 @@ impl BinaryWriterWriteable for String
 {
     fn write<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<usize>
     {
-        writer.write_string(self.parse().unwrap())
+        writer.write_string(self)
     }
 }
