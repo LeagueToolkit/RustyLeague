@@ -399,7 +399,7 @@ impl BinValue {
     fn pack_value_type(value_type: BinValueType) -> u8 {
         let mut value_type = value_type.to_u8().expect("Invalid Value Type");
 
-        if value_type >= 18 && value_type <= 25
+        if value_type >= 18
         {
             value_type = (value_type - 18) + 128;
         }
