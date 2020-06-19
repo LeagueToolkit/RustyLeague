@@ -1,20 +1,27 @@
-use std::io;
-use crate::io::binary_reader::BinaryReader;
-use std::io::{Cursor, Read, Seek, Write};
-use std::path::Path;
-use std::fs::File;
-use crate::structures::vector2::Vector2;
-use crate::structures::vector4::Vector4;
-use crate::structures::vector3::Vector3;
 use palette::LinSrgba;
-use std::collections::HashMap;
-use crate::structures::color::ColorRgba;
-use num_traits::FromPrimitive;
-use num_traits::ToPrimitive;
-use std::hash::{Hash, Hasher};
-use crate::utilities::hashing::StringHasher;
-use crate::io::binary_writer::BinaryWriter;
-use std::mem;
+use num_traits::{ FromPrimitive, ToPrimitive };
+use crate::{
+    io::{
+        binary_reader::BinaryReader,
+        binary_writer::BinaryWriter
+    },
+    structures::{
+        vector2::Vector2,
+        vector3::Vector3,
+        vector4::Vector4,
+        color::ColorRgba
+    },
+    utilities::hashing::StringHasher
+};
+use std::{
+    io,
+    io::{ Cursor, Read, Seek, Write },
+    mem,
+    hash::{ Hash, Hasher },
+    collections::HashMap,
+    fs::File,
+    path::Path
+};
 
 #[derive(Debug)]
 pub struct BinTree {
