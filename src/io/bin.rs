@@ -522,11 +522,13 @@ impl BinStructure {
         Ok(())
     }
 
+    pub fn name(&self) -> u32 { self.name }
+    pub fn fields(&self) -> &Vec<BinValue> { &self.fields }
+
     pub(crate) fn size(&self) -> usize {
         if self.name == 0 { 4 }
         else { 4 + 4 + self.content_size() }
     }
-
     pub(crate) fn content_size(&self) -> usize {
         let mut size = 2usize;
         for field in &self.fields {
@@ -566,10 +568,12 @@ impl BinContainer {
         Ok(())
     }
 
+    pub fn value_type(&self) -> BinValueType { self.value_type }
+    pub fn values(&self) -> &Vec<BinValue> { &self.values }
+
     pub(crate) fn size(&self) -> usize {
         1 + 4 + self.content_size()
     }
-
     pub(crate) fn content_size(&self) -> usize {
         let mut size = 4usize;
         for value in &self.values {
@@ -613,10 +617,13 @@ impl BinMap {
         Ok(())
     }
 
+    pub fn key_type(&self) -> BinValueType { self.key_type }
+    pub fn value_type(&self) -> BinValueType { self.value_type }
+    pub fn map(&self) -> &HashMap<BinValue, BinValue> { &self.map }
+
     pub(crate) fn size(&self) -> usize {
         1 + 1 + 4 + self.content_size()
     }
-
     pub(crate) fn content_size(&self) -> usize {
         let mut size = 4usize;
         for (key, value) in &self.map {
