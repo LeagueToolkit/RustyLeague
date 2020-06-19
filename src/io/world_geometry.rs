@@ -118,12 +118,8 @@ impl WorldGeometry {
         self.models.remove(index);
     }
 
-    pub fn models(&self) -> &Vec<WorldGeometryModel> {
-        return &self.models;
-    }
-    pub fn bucket_grid(&self) -> &RenderBucketGrid {
-        return &self.bucket_grid;
-    }
+    pub fn models(&self) -> &[WorldGeometryModel] { &self.models }
+    pub fn bucket_grid(&self) -> &RenderBucketGrid { &self.bucket_grid }
 }
 
 impl WorldGeometryModel {
@@ -249,24 +245,19 @@ impl WorldGeometryModel {
             self.bounding_box = Box3D::new(min, max);
         }
 
-        return self.bounding_box;
+        self.bounding_box
     }
     pub fn bounding_sphere(&mut self) -> Sphere {
         if self.bounding_sphere == Sphere::ZERO {
             let bounds = self.bounding_box();
             let central_point = self.central_point();
-            self.bounding_sphere =
-                Sphere::new(central_point, Vector3::distance(central_point, bounds.max));
+            self.bounding_sphere = Sphere::new(central_point, Vector3::distance(central_point, bounds.max));
         }
 
-        return self.bounding_sphere;
+        self.bounding_sphere
     }
-    pub fn vertices(&self) -> &Vec<WorldGeometryVertex> {
-        return &self.vertices;
-    }
-    pub fn indices(&self) -> &Vec<u32> {
-        return &self.indices;
-    }
+    pub fn vertices(&self) -> &[WorldGeometryVertex] { &self.vertices }
+    pub fn indices(&self) -> &[u32] { &self.indices }
 
     pub fn set_model_data(&mut self, vertices: Vec<WorldGeometryVertex>, indices: Vec<u32>) {
         self.vertices = vertices;

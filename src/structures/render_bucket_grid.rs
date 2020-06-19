@@ -50,16 +50,16 @@ impl RenderBucketGrid {
         let mut indices: Vec<u16> = Vec::with_capacity(index_count as usize);
         let mut buckets: Vec<Vec<RenderBucket>> = Vec::with_capacity(buckets_per_side as usize);
 
-        for i in 0..vertex_count {
+        for _ in 0..vertex_count {
             vertices.push(Vector3::read(reader)?);
         }
-        for i in 0..index_count {
+        for _ in 0..index_count {
             indices.push(reader.read_u16()?);
         }
-        for i in 0..buckets_per_side {
+        for _ in 0..buckets_per_side {
             let mut bucket_row: Vec<RenderBucket> = Vec::with_capacity(buckets_per_side as usize);
 
-            for j in 0..buckets_per_side {
+            for _ in 0..buckets_per_side {
                 bucket_row.push(RenderBucket::read(reader)?);
             }
 
@@ -122,18 +122,10 @@ impl RenderBucketGrid {
             let mut max = Vector3::new(self.vertices[0].x, std::f32::INFINITY, self.vertices[0].z);
 
             for vertex in &self.vertices {
-                if min.x > vertex.x {
-                    min.x = vertex.x
-                };
-                if min.z > vertex.z {
-                    min.z = vertex.z
-                };
-                if max.x < vertex.x {
-                    max.x = vertex.x
-                };
-                if max.z < vertex.z {
-                    max.z = vertex.z
-                };
+                if min.x > vertex.x { min.x = vertex.x };
+                if min.z > vertex.z { min.z = vertex.z };
+                if max.x < vertex.x { max.x = vertex.x };
+                if max.z < vertex.z { max.z = vertex.z };
             }
 
             self.bounds = Box3D::new(min, max);
@@ -149,12 +141,8 @@ impl RenderBucketGrid {
             for bucket in bucket_row {
                 let (bucket_max_stick_out_x, bucket_max_stick_out_z) = bucket.max_stick_out();
 
-                if max_stick_out_x < bucket_max_stick_out_x {
-                    max_stick_out_x = bucket_max_stick_out_x
-                }
-                if max_stick_out_z < bucket_max_stick_out_z {
-                    max_stick_out_z = bucket_max_stick_out_z
-                }
+                if max_stick_out_x < bucket_max_stick_out_x { max_stick_out_x = bucket_max_stick_out_x }
+                if max_stick_out_z < bucket_max_stick_out_z { max_stick_out_z = bucket_max_stick_out_z }
             }
         }
 

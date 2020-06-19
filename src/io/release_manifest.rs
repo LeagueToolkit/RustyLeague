@@ -144,15 +144,11 @@ impl ReleaseManifest {
 
         Ok(bundles)
     }
-    fn read_body_languages<T: Read + Seek>(
-        offset: u64,
-        reader: &mut BinaryReader<T>,
-    ) -> io::Result<Vec<ReleaseManifestLanguage>> {
+    fn read_body_languages<T: Read + Seek>(offset: u64, reader: &mut BinaryReader<T>) -> io::Result<Vec<ReleaseManifestLanguage>> {
         reader.seek(SeekFrom::Start(offset))?;
 
         let language_count = reader.read_u32()?;
-        let mut languages: Vec<ReleaseManifestLanguage> =
-            Vec::with_capacity(language_count as usize);
+        let mut languages: Vec<ReleaseManifestLanguage> = Vec::with_capacity(language_count as usize);
         for i in 0..language_count {
             let language_offset = reader.read_u32()? as u64;
             let return_offset = reader.position();
@@ -164,10 +160,7 @@ impl ReleaseManifest {
 
         Ok(languages)
     }
-    fn read_body_files<T: Read + Seek>(
-        offset: u64,
-        reader: &mut BinaryReader<T>,
-    ) -> io::Result<Vec<ReleaseManifestFile>> {
+    fn read_body_files<T: Read + Seek>(offset: u64, reader: &mut BinaryReader<T>) -> io::Result<Vec<ReleaseManifestFile>> {
         reader.seek(SeekFrom::Start(offset))?;
 
         let file_count = reader.read_u32()?;
@@ -183,15 +176,11 @@ impl ReleaseManifest {
 
         Ok(files)
     }
-    fn read_body_directories<T: Read + Seek>(
-        offset: u64,
-        reader: &mut BinaryReader<T>,
-    ) -> io::Result<Vec<ReleaseManifestDirectory>> {
+    fn read_body_directories<T: Read + Seek>(offset: u64, reader: &mut BinaryReader<T>) -> io::Result<Vec<ReleaseManifestDirectory>> {
         reader.seek(SeekFrom::Start(offset))?;
 
         let directory_count = reader.read_u32()?;
-        let mut directories: Vec<ReleaseManifestDirectory> =
-            Vec::with_capacity(directory_count as usize);
+        let mut directories: Vec<ReleaseManifestDirectory> = Vec::with_capacity(directory_count as usize);
         for i in 0..directory_count {
             let directory_offset = reader.read_u32()? as u64;
             let return_offset = reader.position();
@@ -207,18 +196,10 @@ impl ReleaseManifest {
     pub fn release_id(&self) -> u64 {
         self.release_id
     }
-    pub fn bundles(&self) -> &Vec<ReleaseManifestBundle> {
-        &self.bundles
-    }
-    pub fn languages(&self) -> &Vec<ReleaseManifestLanguage> {
-        &self.languages
-    }
-    pub fn files(&self) -> &Vec<ReleaseManifestFile> {
-        &self.files
-    }
-    pub fn directories(&self) -> &Vec<ReleaseManifestDirectory> {
-        &self.directories
-    }
+    pub fn bundles(&self) -> &[ReleaseManifestBundle] { &self.bundles }
+    pub fn languages(&self) -> &[ReleaseManifestLanguage] { &self.languages }
+    pub fn files(&self) -> &[ReleaseManifestFile] { &self.files }
+    pub fn directories(&self) -> &[ReleaseManifestDirectory] { &self.directories }
 }
 
 impl ReleaseManifestBundle {
@@ -247,9 +228,7 @@ impl ReleaseManifestBundle {
     pub fn id(&self) -> u64 {
         self.id
     }
-    pub fn chunks(&self) -> &Vec<ReleaseManifestBundleChunk> {
-        &self.chunks
-    }
+    pub fn chunks(&self) -> &[ReleaseManifestBundleChunk] { &self.chunks }
 }
 
 impl ReleaseManifestBundleChunk {
@@ -263,15 +242,9 @@ impl ReleaseManifestBundleChunk {
         })
     }
 
-    pub fn id(&self) -> u64 {
-        self.id
-    }
-    pub fn compressed_size(&self) -> u32 {
-        self.compressed_size
-    }
-    pub fn uncompressed_size(&self) -> u32 {
-        self.uncompressed_size
-    }
+    pub fn id(&self) -> u64 { self.id }
+    pub fn compressed_size(&self) -> u32 { self.compressed_size }
+    pub fn uncompressed_size(&self) -> u32 { self.uncompressed_size }
 }
 
 impl ReleaseManifestLanguage {
@@ -289,12 +262,8 @@ impl ReleaseManifestLanguage {
         Ok(ReleaseManifestLanguage { id, name })
     }
 
-    pub fn id(&self) -> u32 {
-        self.id
-    }
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
+    pub fn id(&self) -> u32 { self.id }
+    pub fn name(&self) -> String { self.name.clone() }
 }
 
 impl ReleaseManifestFile {
@@ -302,15 +271,13 @@ impl ReleaseManifestFile {
         reader.read_u32()?; //offset table offset
 
         let file_offset = reader.position();
-        let mut flags = reader.read_u32()?;
+        let flags = reader.read_u32()?;
         let file_type = flags >> 24;
-        let mut name_offset = 0u64;
-
-        if flags == 0x00010200 || file_type != 0 {
-            name_offset = reader.read_u32()? as u64;
+        let mut name_offset = if flags == 0x00010200 || file_type != 0 {
+            reader.read_u32()? as u64
         } else {
-            name_offset = (flags - 4) as u64;
-        }
+            (flags - 4) as u64
+        };
 
         let structure_size = reader.read_u32()?;
         let link_offset = reader.read_u32()? as u64;
@@ -361,27 +328,13 @@ impl ReleaseManifestFile {
         })
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-    pub fn link(&self) -> String {
-        self.link.clone()
-    }
-    pub fn id(&self) -> u64 {
-        self.id
-    }
-    pub fn directory_id(&self) -> u64 {
-        self.directory_id
-    }
-    pub fn size(&self) -> u32 {
-        self.size
-    }
-    pub fn language_ids(&self) -> &Vec<u32> {
-        &self.language_ids
-    }
-    pub fn chunk_ids(&self) -> &Vec<u64> {
-        &self.chunk_ids
-    }
+    pub fn name(&self) -> String { self.name.clone() }
+    pub fn link(&self) -> String { self.link.clone() }
+    pub fn id(&self) -> u64 { self.id }
+    pub fn directory_id(&self) -> u64 { self.directory_id }
+    pub fn size(&self) -> u32 { self.size }
+    pub fn language_ids(&self) -> &[u32] { &self.language_ids }
+    pub fn chunk_ids(&self) -> &[u64] { &self.chunk_ids }
 }
 
 impl ReleaseManifestDirectory {
@@ -420,13 +373,7 @@ impl ReleaseManifestDirectory {
         })
     }
 
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-    pub fn id(&self) -> u64 {
-        self.id
-    }
-    pub fn parent_id(&self) -> u64 {
-        self.parent_id
-    }
+    pub fn name(&self) -> String { self.name.clone() }
+    pub fn id(&self) -> u64 { self.id }
+    pub fn parent_id(&self) -> u64 { self.parent_id }
 }

@@ -190,8 +190,8 @@ impl SimpleSkin {
         for submesh in self.submeshes() {
             for vertex in submesh.vertices() {
                 if vertex.color.is_none() && contains_vertex_color {
-                    // Clone vertex so we don't modify mesh data but save a correct file
-                    let mut color_vertex = vertex.clone();
+                    // Copy vertex so we don't modify mesh data but save a correct file
+                    let mut color_vertex = *vertex;
                     color_vertex.color = Option::from(LinSrgba::new(0.0, 0.0, 0.0, 0.0));
                     color_vertex.write(writer)?;
                 } else {
@@ -212,12 +212,7 @@ impl SimpleSkin {
             .iter()
             .position(|submesh| submesh.name == name);
 
-        match index {
-            Some(x) => {
-                self.submeshes.remove(x);
-            }
-            _ => {}
-        }
+        if let Some(x) = index { self.submeshes.remove(x); }
     }
     pub fn remove_submesh_index(&mut self, index: usize) {
         if index < self.submeshes.len() {
@@ -225,9 +220,7 @@ impl SimpleSkin {
         }
     }
 
-    pub fn submeshes(&mut self) -> &mut Vec<SimpleSkinSubmesh> {
-        &mut self.submeshes
-    }
+    pub fn submeshes(&mut self) -> &mut [SimpleSkinSubmesh] { &mut self.submeshes }
 
     pub fn central_point(&mut self) -> Vector3 {
         let bounds = self.bounding_box();
@@ -273,7 +266,7 @@ impl SimpleSkin {
             self.bounding_box = Box3D::new(min, max);
         }
 
-        return self.bounding_box;
+        self.bounding_box
     }
     pub fn bounding_sphere(&mut self) -> Sphere {
         if self.bounding_sphere == Sphere::ZERO {
@@ -283,7 +276,7 @@ impl SimpleSkin {
                 Sphere::new(central_point, Vector3::distance(central_point, bounds.max));
         }
 
-        return self.bounding_sphere;
+        self.bounding_sphere
     }
 }
 
@@ -340,12 +333,8 @@ impl SimpleSkinSubmesh {
         return false;
     }
 
-    pub fn vertices(&mut self) -> &mut Vec<SimpleSkinVertex> {
-        &mut self.vertices
-    }
-    pub fn indices(&mut self) -> &mut Vec<u16> {
-        &mut self.indices
-    }
+    pub fn vertices(&mut self) -> &mut [SimpleSkinVertex] { &mut self.vertices }
+    pub fn indices(&mut self) -> &mut [u16] { &mut self.indices }
 }
 
 impl SimpleSkinVertex {

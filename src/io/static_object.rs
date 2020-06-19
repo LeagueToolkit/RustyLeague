@@ -109,7 +109,7 @@ impl StaticObject {
         vertex_colors: &[LinSrgba],
         faces: &[StaticObjectFace],
     ) -> Vec<StaticObjectSubmesh> {
-        let has_vertex_colors = vertex_colors.len() != 0;
+        let has_vertex_colors = !vertex_colors.is_empty();
         let submesh_map = StaticObject::create_submesh_map(faces);
         let mut submeshes: Vec<StaticObjectSubmesh> = Vec::with_capacity(submesh_map.len());
 
@@ -123,9 +123,7 @@ impl StaticObject {
                 indices.push(face.indices[2]);
 
                 for i in 0..3 {
-                    if !uv_map.contains_key(&face.indices[i]) {
-                        uv_map.insert(face.indices[i], face.uvs[i]);
-                    }
+                    uv_map.entry(face.indices[i]).or_insert(face.uvs[i]);
                 }
             }
 

@@ -18,7 +18,9 @@ pub fn hash_string_lc<H: Hasher + Default>(string: &str) -> u64 {
 impl<H: Hasher> StringHasher for H {
     fn hash_string_lc(&mut self, string: &str) -> u64 {
         for c in string.chars() {
-            c.to_lowercase().map(|lc| self.write_u8(lc as u8));
+            for lc in c.to_lowercase() {
+                self.write_u8(lc as u8)
+            }
         }
 
         self.finish()
@@ -26,7 +28,9 @@ impl<H: Hasher> StringHasher for H {
 
     fn write_string_lc(&mut self, string: &str) {
         for c in string.chars() {
-            c.to_lowercase().map(|lc| self.write_u8(lc as u8));
+            for lc in c.to_lowercase() {
+                self.write_u8(lc as u8)
+            }
         }
     }
 }
