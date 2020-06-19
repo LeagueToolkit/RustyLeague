@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_static_object() {
-        let mut static_object =
+        let static_object =
             StaticObject::read_scb_from_file(Path::new("test_files/aatrox_base_w_ground_ring.scb"));
 
         {
@@ -76,7 +76,7 @@ mod tests {
         if let Ok(bin) = bin {
             BinWriter::write_tree_file(&bin, &Path::new("test_files/skin0_write.bin"))?;
 
-            let mut bin = BinReader::read_tree_file(Path::new("test_files/skin0_write.bin"))?;
+            let bin = BinReader::read_tree_file(Path::new("test_files/skin0_write.bin"))?;
             //assert!(bin.is_ok());
         }
 

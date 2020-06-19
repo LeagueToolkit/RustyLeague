@@ -130,7 +130,7 @@ impl SimpleSkin {
             }
 
             //Normalize indices
-            for mut index in &mut submesh_indices {
+            for index in &mut submesh_indices {
                 index.sub_assign(min_index);
             }
 

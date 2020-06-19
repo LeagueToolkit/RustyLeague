@@ -273,7 +273,7 @@ impl ReleaseManifestFile {
         let file_offset = reader.position();
         let flags = reader.read_u32()?;
         let file_type = flags >> 24;
-        let mut name_offset = if flags == 0x00010200 || file_type != 0 {
+        let name_offset = if flags == 0x00010200 || file_type != 0 {
             reader.read_u32()? as u64
         } else {
             (flags - 4) as u64
