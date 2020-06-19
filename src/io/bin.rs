@@ -184,7 +184,7 @@ impl BinValue {
     fn read_value<R: Read + Seek>(name: u32, value_type: BinValueType, reader: &mut BinaryReader<R>) -> io::Result<Self> {
         Ok(match value_type {
             BinValueType::None         => BinValue::None         { name },
-            BinValueType::Boolean      => BinValue::Boolean      { name, value: reader.read_u8()? != 1 },
+            BinValueType::Boolean      => BinValue::Boolean      { name, value: reader.read_u8()? != 0 },
             BinValueType::SByte        => BinValue::SByte        { name, value: reader.read_i8()?},
             BinValueType::Byte         => BinValue::Byte         { name, value: reader.read_u8()?},
             BinValueType::Int16        => BinValue::Int16        { name, value: reader.read_i16()?},
@@ -228,7 +228,7 @@ impl BinValue {
                 BinValue::Optional { name, value_type: optional.0, value: optional.1 }
             },
             BinValueType::Map          => BinValue::Map          { name, value: BinMap::read(reader)?},
-            BinValueType::FlagsBoolean => BinValue::FlagsBoolean { name, value: reader.read_u8()? != 1},
+            BinValueType::FlagsBoolean => BinValue::FlagsBoolean { name, value: reader.read_u8()? != 0},
             _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid Value type"))
         })
     }
