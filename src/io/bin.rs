@@ -296,7 +296,6 @@ impl BinValue {
             },
             BinValueType::Map          => BinValue::Map          { name, value: BinMap::read(reader)?},
             BinValueType::FlagsBoolean => BinValue::FlagsBoolean { name, value: reader.read_u8()? != 0},
-            _ => return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid Value type"))
         })
     }
     fn read_optional<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<(BinValueType, Option<Box<BinValue>>)> {
