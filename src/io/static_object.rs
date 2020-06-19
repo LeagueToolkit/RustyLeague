@@ -105,9 +105,9 @@ impl StaticObject {
     }
 
     fn create_submeshes(
-        vertices: &Vec<Vector3>,
-        vertex_colors: &Vec<LinSrgba>,
-        faces: &Vec<StaticObjectFace>,
+        vertices: &[Vector3],
+        vertex_colors: &[LinSrgba],
+        faces: &[StaticObjectFace],
     ) -> Vec<StaticObjectSubmesh> {
         let has_vertex_colors = vertex_colors.len() != 0;
         let submesh_map = StaticObject::create_submesh_map(faces);
@@ -175,7 +175,7 @@ impl StaticObject {
         return submeshes;
     }
     fn create_submesh_map(
-        faces: &Vec<StaticObjectFace>,
+        faces: &[StaticObjectFace],
     ) -> HashMap<String, Vec<&StaticObjectFace>> {
         let mut submesh_map = HashMap::new();
 
@@ -206,7 +206,7 @@ impl StaticObjectSubmesh {
         self.indices = indices;
     }
 
-    pub fn vertices(&mut self) -> &mut Vec<StaticObjectVertex> {
+    pub fn vertices(&mut self) -> &mut [StaticObjectVertex] {
         &mut self.vertices
     }
     pub fn indices(&mut self) -> &mut Vec<u32> {

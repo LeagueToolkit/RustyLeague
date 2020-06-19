@@ -103,8 +103,8 @@ impl RenderBucketGrid {
         for index in &self.indices {
             writer.write(*index)?;
         }
-        for bucketRow in &mut self.buckets {
-            for bucket in bucketRow {
+        for bucket_row in &mut self.buckets {
+            for bucket in bucket_row {
                 bucket.write(writer)?;
             }
         }
@@ -139,14 +139,14 @@ impl RenderBucketGrid {
             self.bounds = Box3D::new(min, max);
         }
 
-        return self.bounds;
+        self.bounds
     }
     pub fn max_stick_out(&self) -> (f32, f32) {
         let mut max_stick_out_x: f32 = 0.0;
         let mut max_stick_out_z: f32 = 0.0;
 
-        for bucketRow in &self.buckets {
-            for bucket in bucketRow {
+        for bucket_row in &self.buckets {
+            for bucket in bucket_row {
                 let (bucket_max_stick_out_x, bucket_max_stick_out_z) = bucket.max_stick_out();
 
                 if max_stick_out_x < bucket_max_stick_out_x {
@@ -158,7 +158,7 @@ impl RenderBucketGrid {
             }
         }
 
-        return (max_stick_out_x, max_stick_out_z);
+        (max_stick_out_x, max_stick_out_z)
     }
     pub fn bucket_size(&mut self) -> (f32, f32) {
         let bounds = self.bounds();
@@ -168,18 +168,10 @@ impl RenderBucketGrid {
 
         (length_x / buckets_per_side, length_z / buckets_per_side)
     }
-    pub fn buckets_per_side(&self) -> u16 {
-        return self.buckets.len() as u16;
-    }
-    pub fn vertices(&self) -> &Vec<Vector3> {
-        return &self.vertices;
-    }
-    pub fn indices(&self) -> &Vec<u16> {
-        return &self.indices;
-    }
-    pub fn buckets(&self) -> &Vec<Vec<RenderBucket>> {
-        return &self.buckets;
-    }
+    pub fn buckets_per_side(&self) -> u16 { self.buckets.len() as u16 }
+    pub fn vertices(&self) -> &[Vector3] { &self.vertices }
+    pub fn indices(&self) -> &[u16] { &self.indices }
+    pub fn buckets(&self) -> &[Vec<RenderBucket>] { &self.buckets }
 }
 
 impl RenderBucket {
@@ -205,19 +197,9 @@ impl RenderBucket {
         Ok(())
     }
 
-    pub fn max_stick_out(&self) -> (f32, f32) {
-        return (self.max_stick_out_x, self.max_stick_out_z);
-    }
-    pub fn start_index(&self) -> u32 {
-        return self.start_index;
-    }
-    pub fn base_vertex(&self) -> u32 {
-        return self.base_vertex;
-    }
-    pub fn inside_face_count(&self) -> u16 {
-        return self.inside_face_count;
-    }
-    pub fn sticking_out_face_count(&self) -> u16 {
-        return self.sticking_out_face_count;
-    }
+    pub fn max_stick_out(&self) -> (f32, f32) { (self.max_stick_out_x, self.max_stick_out_z) }
+    pub fn start_index(&self) -> u32 { self.start_index }
+    pub fn base_vertex(&self) -> u32 { self.base_vertex }
+    pub fn inside_face_count(&self) -> u16 { self.inside_face_count }
+    pub fn sticking_out_face_count(&self) -> u16 { self.sticking_out_face_count }
 }

@@ -187,7 +187,7 @@ impl WorldGeometryModel {
         writer.write(self.indices.len() as u32)?;
 
         for vertex in &mut self.vertices {
-            vertex.write(writer);
+            vertex.write(writer)?;
         }
 
         if self.indices.len() <= 65536 {

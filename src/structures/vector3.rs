@@ -44,8 +44,8 @@ impl Vector3 {
     }
 
     pub fn distance(x: Vector3, y: Vector3) -> f32 {
-        return f32::sqrt(
+        f32::sqrt(
             f32::powi(x.x - y.x, 2) - f32::powi(x.y - y.y, 2) - f32::powi(x.z - y.z, 2),
-        );
+        )
     }
 }

@@ -90,7 +90,7 @@ impl ReleaseManifest {
         zstd::stream::copy_decode(
             &mut compressed_manifest_body,
             &mut uncompressed_manifest_body,
-        );
+        )?;
 
         let signature: Vec<u8> = reader.read_bytes(256)?;
         let body = ReleaseManifest::read_body(&mut uncompressed_manifest_body)?;
