@@ -1,4 +1,4 @@
-use std::hash::{Hasher};
+use std::hash::Hasher;
 
 pub trait StringHasher {
     fn hash_string_lc(&mut self, string: &str) -> u64;
@@ -8,7 +8,9 @@ pub trait StringHasher {
 pub fn hash_string_lc<H: Hasher + Default>(string: &str) -> u64 {
     let mut hasher = H::default();
 
-    string.bytes().for_each(|c| hasher.write_u8(c.to_ascii_lowercase()));
+    string
+        .bytes()
+        .for_each(|c| hasher.write_u8(c.to_ascii_lowercase()));
 
     hasher.finish()
 }

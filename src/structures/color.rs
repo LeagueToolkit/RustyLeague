@@ -1,12 +1,12 @@
-use std::io::{Seek, Read, Write};
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
+use palette::{LinSrgb, LinSrgba};
 use std::io;
-use palette::{LinSrgba, LinSrgb};
+use std::io::{Read, Seek, Write};
 
 pub trait ColorRgba: Sized {
     fn read_rgba_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
-    fn read_rgba_f32<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self >;
+    fn read_rgba_f32<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
 
     fn write_rgba_u8<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()>;
     fn write_rgba_f32<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()>;
@@ -21,16 +21,20 @@ pub trait ColorRgb: Sized {
 
 impl ColorRgba for LinSrgba {
     fn read_rgba_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
-        Ok(LinSrgba::new(reader.read_u8()? as f32 / 255.0,
-                         reader.read_u8()? as f32 / 255.0,
-                         reader.read_u8()? as f32 / 255.0,
-                         reader.read_u8()? as f32 / 255.0))
+        Ok(LinSrgba::new(
+            reader.read_u8()? as f32 / 255.0,
+            reader.read_u8()? as f32 / 255.0,
+            reader.read_u8()? as f32 / 255.0,
+            reader.read_u8()? as f32 / 255.0,
+        ))
     }
     fn read_rgba_f32<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
-        Ok(LinSrgba::new(reader.read_f32()?,
-                         reader.read_f32()?,
-                         reader.read_f32()?,
-                         reader.read_f32()?))
+        Ok(LinSrgba::new(
+            reader.read_f32()?,
+            reader.read_f32()?,
+            reader.read_f32()?,
+            reader.read_f32()?,
+        ))
     }
 
     fn write_rgba_u8<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
@@ -53,16 +57,18 @@ impl ColorRgba for LinSrgba {
 
 impl ColorRgb for LinSrgb {
     fn read_rgb_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
-        Ok(LinSrgb::new(reader.read_u8()? as f32 / 255.0,
-                        reader.read_u8()? as f32 / 255.0,
-                        reader.read_u8()? as f32 / 255.0))
+        Ok(LinSrgb::new(
+            reader.read_u8()? as f32 / 255.0,
+            reader.read_u8()? as f32 / 255.0,
+            reader.read_u8()? as f32 / 255.0,
+        ))
     }
     fn read_bgr_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
         let b = reader.read_u8()? as f32 / 255.0;
         let g = reader.read_u8()? as f32 / 255.0;
         let r = reader.read_u8()? as f32 / 255.0;
 
-        Ok(LinSrgb::new(r,g,b))
+        Ok(LinSrgb::new(r, g, b))
     }
 
     fn write_rgb_u8<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()> {
