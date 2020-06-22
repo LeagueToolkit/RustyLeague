@@ -1,6 +1,6 @@
 use crate::{
     io::{binary_reader::BinaryReader, binary_writer::BinaryWriter},
-    structures::{color::ColorRgba, vector2::Vector2, vector3::Vector3, vector4::Vector4},
+    structures::{color::LinSrgbaExt, vector2::Vector2, vector3::Vector3, vector4::Vector4},
     utilities::hashing::StringHasher,
 };
 use num_traits::{FromPrimitive, ToPrimitive};

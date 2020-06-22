@@ -4,14 +4,15 @@ use palette::{LinSrgb, LinSrgba};
 use std::io;
 use std::io::{Read, Seek, Write};
 
-pub trait ColorRgba: Sized {
+pub trait LinSrgbaExt: Sized {
     fn read_rgba_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
+    fn read_bgra_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
     fn read_rgba_f32<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
 
     fn write_rgba_u8<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()>;
     fn write_rgba_f32<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()>;
 }
-pub trait ColorRgb: Sized {
+pub trait LinSrgbExt: Sized {
     fn read_rgb_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
     fn read_bgr_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self>;
 
@@ -19,7 +20,7 @@ pub trait ColorRgb: Sized {
     fn write_bgr_u8<W: Write + Seek>(&self, writer: &mut BinaryWriter<W>) -> io::Result<()>;
 }
 
-impl ColorRgba for LinSrgba {
+impl LinSrgbaExt for LinSrgba {
     fn read_rgba_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
         Ok(LinSrgba::new(
             reader.read_u8()? as f32 / 255.0,
@@ -28,6 +29,16 @@ impl ColorRgba for LinSrgba {
             reader.read_u8()? as f32 / 255.0,
         ))
     }
+
+    fn read_bgra_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
+        let b = reader.read_u8()? as f32 / 255.0;
+        let g = reader.read_u8()? as f32 / 255.0;
+        let r = reader.read_u8()? as f32 / 255.0;
+        let a = reader.read_u8()? as f32 / 255.0;
+
+        Ok(LinSrgba::new(r, g, b, a))
+    }
+
     fn read_rgba_f32<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
         Ok(LinSrgba::new(
             reader.read_f32()?,
@@ -55,7 +66,7 @@ impl ColorRgba for LinSrgba {
     }
 }
 
-impl ColorRgb for LinSrgb {
+impl LinSrgbExt for LinSrgb {
     fn read_rgb_u8<R: Read + Seek>(reader: &mut BinaryReader<R>) -> io::Result<Self> {
         Ok(LinSrgb::new(
             reader.read_u8()? as f32 / 255.0,

@@ -1,7 +1,7 @@
 use crate::io::binary_reader::BinaryReader;
 use crate::io::binary_writer::BinaryWriter;
 use crate::structures::box3d::Box3D;
-use crate::structures::color::ColorRgba;
+use crate::structures::color::LinSrgbaExt;
 use crate::structures::sphere::Sphere;
 use crate::structures::vector2::Vector2;
 use crate::structures::vector3::Vector3;

@@ -5,3 +5,4 @@ pub mod release_manifest;
 pub mod simple_skin;
 pub mod static_object;
 pub mod world_geometry;
+pub mod simple_environment;

@@ -18,6 +18,7 @@ mod tests {
     use std::io;
     use std::io::{Read, Write};
     use std::path::Path;
+    use crate::io::simple_environment::SimpleEnvironment;
 
     #[test]
     fn test_wgeo() {
@@ -79,6 +80,13 @@ mod tests {
             let bin = BinReader::read_tree_file(Path::new("test_files/skin0_write.bin"))?;
             //assert!(bin.is_ok());
         }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_nvr() -> io::Result<()> {
+        let nvr = SimpleEnvironment::read_file(Path::new("test_files/room.nvr"))?;
 
         Ok(())
     }
